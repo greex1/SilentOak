@@ -960,5 +960,49 @@ function loadImages(){
 }
 window.addEventListener('load',loadImages);
 </script>
+    <script>
+(function() {
+    // CDN 镜像配置（按优先级）
+    const mirrors = [
+        'https://ghproxy.com/https://raw.githubusercontent.com',     // 国内代理 1
+        'https://mirror.ghproxy.com/https://raw.githubusercontent.com', // 国内代理 2
+        'https://jsd.cdn.zzko.cn/gh',                                // jsDelivr 国内镜像
+        'https://cdn.jsdelivr.net/gh'                                // jsDelivr 官方
+    ];
+    
+    const rawRegex = /^https?:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/;
+    
+    document.querySelectorAll('img').forEach(function(img) {
+        const src = img.getAttribute('src');
+        if (!src || !rawRegex.test(src)) return;
+        
+        const match = src.match(rawRegex);
+        const user = match[1], repo = match[2], branch = match[3], path = match[4];
+        
+        // 尝试 jsDelivr 格式（最稳定）：https://cdn.jsdelivr.net/gh/用户/仓库@分支/路径
+        const jsdelivrUrl = `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${path}`;
+        
+        // 如果原图加载失败，自动切换到备用源
+        img.onerror = function() {
+            if (img.dataset.mirrorIndex === undefined) img.dataset.mirrorIndex = 0;
+            let idx = parseInt(img.dataset.mirrorIndex);
+            if (idx < mirrors.length) {
+                const mirror = mirrors[idx];
+                let newSrc;
+                if (mirror.includes('jsdelivr') || mirror.includes('jsd')) {
+                    newSrc = `${mirror}/${user}/${repo}@${branch}/${path}`;
+                } else {
+                    newSrc = `${mirror}/${user}/${repo}/${branch}/${path}`;
+                }
+                img.src = newSrc;
+                img.dataset.mirrorIndex = idx + 1;
+            }
+        };
+        
+        // 优先使用 jsDelivr
+        img.src = jsdelivrUrl;
+    });
+})();
+</script>
 </body>
 </html>
