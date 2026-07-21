@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>喜马拉雅服务器 | Himalaya Server</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --accent: #00d4aa;
+            --accent-glow: rgba(0, 212, 170, 0.4);
+            --danger: #ff4757;
+            --danger-glow: rgba(255, 71, 87, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: #0a0a0f;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+        }
+        .bg-scene {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; overflow: hidden;
+        }
+        .bg-gradient {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(180deg, #0a0e1a 0%, #0d1525 30%, #0a1a2e 60%, #061220 100%);
+        }
+        .bg-aurora {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 50%;
+            opacity: 0.12;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 20%, rgba(0, 212, 170, 0.3) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 70% 15%, rgba(100, 50, 200, 0.2) 0%, transparent 50%);
+            filter: blur(40px);
+            animation: auroraMove 20s infinite ease-in-out;
+        }
+        @keyframes auroraMove {
+            0%, 100% { transform: translateX(0) scale(1); opacity: 0.1; }
+            50% { transform: translateX(5%) scale(1.05); opacity: 0.16; }
+        }
+        .stars { position: absolute; top: 0; left: 0; width: 100%; height: 60%; }
+        .star {
+            position: absolute; background: #fff; border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        .snow-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; }
+        .snow {
+            position: absolute; background: rgba(255,255,255,0.6); border-radius: 50%;
+            animation: snowfall linear infinite;
+        }
+        @keyframes snowfall {
+            0% { transform: translateY(-10px) translateX(0); opacity: 0; }
+            10% { opacity: 1; } 90% { opacity: 1; }
+            100% { transform: translateY(100vh) translateX(20px); opacity: 0; }
+        }
+        #mountainCanvas { position: absolute; bottom: 0; left: 0; width: 100%; height: 55%; }
+        .status-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 10px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .status-bar-left { display: flex; align-items: center; gap: 12px; }
+        .hamburger {
+            width: 26px; height: 20px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            cursor: pointer; z-index: 1002; position: relative; flex-shrink: 0;
+        }
+        .hamburger span {
+            display: block; width: 100%; height: 2.5px;
+            background: var(--text-primary); border-radius: 2px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+        .hamburger.active span:nth-child(1) { transform: translateY(8.75px) rotate(45deg); }
+        .hamburger.active span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .hamburger.active span:nth-child(3) { transform: translateY(-8.75px) rotate(-45deg); }
+        .server-brand { display: flex; align-items: center; gap: 10px; }
+        .logo-container {
+            position: relative; width: 36px; height: 36px;
+            cursor: pointer; border-radius: 10px; overflow: hidden;
+            transition: all 0.3s ease; flex-shrink: 0;
+        }
+        .logo-container:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--accent-glow); }
+        .logo-container img, .logo-default { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+        .logo-default {
+            background: linear-gradient(135deg, var(--accent), #0088ff);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 16px; box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .server-brand h1 { font-size: 16px; font-weight: 500; letter-spacing: 0.5px; white-space: nowrap; }
+        .server-brand span { color: var(--text-secondary); font-size: 11px; font-weight: 300; display: block; }
+        .status-bar-right { display: flex; align-items: center; gap: 12px; }
+        .top-btn {
+            padding: 8px 14px; background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            color: var(--text-primary); font-size: 13px; cursor: pointer;
+            backdrop-filter: blur(4px); transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 6px;
+            white-space: nowrap; font-family: inherit;
+        }
+        .top-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+        .status-indicator {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 12px; border-radius: 50px;
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px); user-select: none; pointer-events: none; flex-shrink: 0;
+        }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; position: relative; transition: all 0.5s ease; flex-shrink: 0; }
+        .status-dot.online { background: var(--accent); box-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow); animation: pulse-green 2s infinite; }
+        .status-dot.offline { background: var(--danger); box-shadow: 0 0 10px var(--danger-glow), 0 0 20px var(--danger-glow); animation: pulse-red 2s infinite; }
+        @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow); } 50% { box-shadow: 0 0 16px var(--accent-glow), 0 0 32px var(--accent-glow); } }
+        @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 10px var(--danger-glow), 0 0 20px var(--danger-glow); } 50% { box-shadow: 0 0 16px var(--danger-glow), 0 0 32px var(--danger-glow); } }
+        .status-text { font-size: 13px; font-weight: 500; white-space: nowrap; }
+        .status-text.online { color: var(--accent); }
+        .status-text.offline { color: var(--danger); }
+        .sidebar-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+            z-index: 998; opacity: 0; pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        .sidebar-overlay.active { opacity: 1; pointer-events: all; }
+        .sidebar {
+            position: fixed; top: 0; left: 0;
+            width: 320px; max-width: 85vw; height: 100%;
+            background: rgba(10, 15, 30, 0.95);
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border-right: 1px solid var(--glass-border);
+            z-index: 999; transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 80px 20px 24px;
+            overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+        .sidebar.active { transform: translateX(0); }
+        .sidebar-title {
+            font-size: 18px; font-weight: 600; margin-bottom: 24px;
+            padding-bottom: 16px; border-bottom: 1px solid var(--glass-border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin-bottom: 8px; }
+        .sidebar-menu a {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px; border-radius: 12px;
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 15px; transition: all 0.3s ease; border: 1px solid transparent;
+        }
+        .sidebar-menu a:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); border-color: var(--glass-border); transform: translateX(4px); }
+        .sidebar-menu .menu-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #0088ff); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .sidebar-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--glass-border); font-size: 12px; color: rgba(255,255,255,0.3); text-align: center; }
+        .main-content { position: relative; z-index: 1; padding-top: 80px; max-width: 1200px; margin: 0 auto; padding-left: 20px; padding-right: 20px; padding-bottom: 40px; }
+        .hero { text-align: center; padding: 40px 0 32px; }
+        .hero h2 { font-size: 42px; font-weight: 700; background: linear-gradient(135deg, #fff 0%, #a0d8ef 50%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; letter-spacing: 1px; }
+        .hero p { font-size: 15px; color: var(--text-secondary); max-width: 560px; margin: 0 auto; line-height: 1.8; }
+        .hero-meta { display: flex; justify-content: center; gap: 20px; margin-top: 28px; flex-wrap: wrap; }
+        .meta-item { text-align: center; padding: 14px 20px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; backdrop-filter: blur(10px); min-width: 100px; transition: all 0.3s ease; }
+        .meta-item:hover { transform: translateY(-4px); background: rgba(255,255,255,0.12); box-shadow: var(--glass-shadow); }
+        .meta-item .number { font-size: 26px; font-weight: 700; color: var(--accent); display: block; }
+        .meta-item .label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .glass-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 28px; margin-bottom: 20px; box-shadow: var(--glass-shadow); transition: all 0.4s ease; position: relative; overflow: hidden; }
+        .glass-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); }
+        .glass-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.25); }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .card-title .icon { width: 30px; height: 30px; background: linear-gradient(135deg, var(--accent), #0088ff); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+        .history-content { line-height: 1.9; color: var(--text-secondary); font-size: 14px; }
+        .history-content strong { color: var(--text-primary); font-weight: 500; }
+        .history-content .highlight { color: var(--accent); font-weight: 500; }
+        .timeline { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .timeline-item { flex: 1; min-width: 140px; padding: 14px; background: rgba(0,212,170,0.05); border: 1px solid rgba(0,212,170,0.15); border-radius: 12px; text-align: center; transition: all 0.3s ease; }
+        .timeline-item:hover { background: rgba(0,212,170,0.1); transform: translateY(-2px); }
+        .timeline-item .date { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+        .timeline-item .event { font-size: 12px; color: var(--text-secondary); }
+        .chart-container { position: relative; width: 100%; height: 300px; }
+        .chart-canvas { width: 100%; height: 100%; display: block; }
+        .chart-legend { display: flex; justify-content: center; gap: 20px; margin-top: 14px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+        .gallery-item { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 16/10; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); cursor: pointer; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s ease; transform-style: preserve-3d; perspective: 800px; -webkit-tap-highlight-color: transparent; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; pointer-events: none; display: block; }
+        .gallery-item:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.4); border-color: rgba(0,212,170,0.3); }
+        .gallery-item:hover img { transform: scale(1.05); }
+        .gallery-item .overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); opacity: 0; transition: opacity 0.3s ease; }
+        .gallery-item:hover .overlay { opacity: 1; }
+        .gallery-item .overlay span { font-size: 13px; font-weight: 500; }
+        .gallery-item.tilt-tl { transform: perspective(800px) rotateX(5deg) rotateY(-5deg) scale(0.97); }
+        .gallery-item.tilt-tr { transform: perspective(800px) rotateX(5deg) rotateY(5deg) scale(0.97); }
+        .gallery-item.tilt-bl { transform: perspective(800px) rotateX(-5deg) rotateY(-5deg) scale(0.97); }
+        .gallery-item.tilt-br { transform: perspective(800px) rotateX(-5deg) rotateY(5deg) scale(0.97); }
+        .gallery-item.tilt-center { transform: perspective(800px) rotateX(0deg) rotateY(0deg) scale(0.93); }
+        .gallery-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); gap: 6px; }
+        .gallery-placeholder .ph-icon { font-size: 28px; opacity: 0.5; }
+        .gallery-placeholder .ph-text { font-size: 12px; }
+        .map-section { position: relative; }
+        .map-container { width: 100%; height: 450px; border-radius: 14px; overflow: hidden; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); position: relative; cursor: zoom-in; transition: all 0.3s ease; }
+        .map-container:hover { border-color: rgba(0,212,170,0.3); }
+        .map-container img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .map-container.zoomed { cursor: zoom-out; position: fixed; top: 5%; left: 5%; width: 90%; height: 90%; z-index: 4000; border-radius: 16px; }
+        .map-overlay-bg { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 3999; }
+        .map-overlay-bg.active { display: block; }
+        .map-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); gap: 10px; }
+        .map-placeholder .mp-icon { font-size: 40px; opacity: 0.4; }
+        .map-placeholder .mp-text { font-size: 14px; }
+        .map-placeholder .mp-hint { font-size: 11px; color: rgba(255,255,255,0.3); }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        footer { position: relative; z-index: 1; text-align: center; padding: 32px 20px; color: rgba(255,255,255,0.3); font-size: 12px; }
+        footer a { color: var(--accent); text-decoration: none; }
+        .image-viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
+        .image-viewer.active { opacity: 1; visibility: visible; }
+        .image-viewer-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); }
+        .image-viewer-img { position: relative; z-index: 1; max-width: 90vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); transform: scale(0.85); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); object-fit: contain; }
+        .image-viewer.active .image-viewer-img { transform: scale(1); }
+        .image-viewer-close { position: absolute; top: 20px; right: 20px; z-index: 2; width: 40px; height: 40px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+        .image-viewer-close:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
+        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .popup-overlay.active { opacity: 1; pointer-events: all; }
+        .player-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); background: rgba(15,15,25,0.95); border: 1px solid var(--glass-border); border-radius: 16px; padding: 28px; z-index: 2000; backdrop-filter: blur(30px); box-shadow: 0 24px 64px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: all 0.3s ease; min-width: 260px; max-width: 90vw; text-align: center; }
+        .player-popup.active { opacity: 1; pointer-events: all; transform: translate(-50%, -50%) scale(1); }
+        .player-popup h3 { margin-bottom: 12px; font-size: 16px; }
+        .player-popup .current-count { font-size: 42px; font-weight: 700; color: var(--accent); margin: 12px 0; }
+        .player-popup .popup-close { margin-top: 16px; padding: 10px 24px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 10px; color: var(--text-primary); cursor: pointer; transition: all 0.3s ease; font-family: inherit; font-size: 14px; }
+        .player-popup .popup-close:hover { background: rgba(255,255,255,0.1); }
+        .password-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2999; align-items: center; justify-content: center; }
+        .password-overlay.active { display: flex; }
+        .password-box { background: rgba(15,15,25,0.95); border: 1px solid var(--glass-border); border-radius: 16px; padding: 28px; text-align: center; min-width: 280px; max-width: 90vw; backdrop-filter: blur(30px); }
+        .password-box h3 { margin-bottom: 16px; font-size: 16px; }
+        .password-box input { width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 10px; color: var(--text-primary); font-size: 14px; margin-bottom: 14px; outline: none; transition: all 0.3s ease; font-family: inherit; }
+        .password-box input:focus { border-color: var(--accent); box-shadow: 0 0 12px rgba(0,212,170,0.2); }
+        .password-box .pw-btns { display: flex; gap: 10px; }
+        .password-box .pw-btns button { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); cursor: pointer; font-size: 13px; transition: all 0.3s ease; font-family: inherit; }
+        .password-box .pw-btns .confirm { background: var(--accent); color: #000; font-weight: 600; border: none; }
+        .password-box .pw-btns .confirm:hover { box-shadow: 0 0 16px var(--accent-glow); }
+        .password-box .pw-btns .cancel { background: transparent; color: var(--text-secondary); }
+        .password-box .pw-btns .cancel:hover { background: rgba(255,255,255,0.05); }
+        .password-box .pw-hint { margin-top: 10px; font-size: 11px; color: rgba(255,255,255,0.3); }
+        .admin-panel { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 3000; background: rgba(15,15,25,0.95); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; backdrop-filter: blur(30px); box-shadow: 0 24px 64px rgba(0,0,0,0.6); min-width: 260px; max-width: 90vw; }
+        .admin-panel.active { display: block; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .admin-panel h3 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .admin-panel .admin-badge { background: linear-gradient(135deg, var(--accent), #0088ff); color: #fff; font-size: 9px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+        .admin-panel .control-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 12px; background: var(--glass-bg); border-radius: 10px; border: 1px solid var(--glass-border); }
+        .admin-panel .control-row label { font-size: 13px; color: var(--text-secondary); }
+        .toggle-switch { position: relative; width: 46px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+        .toggle-switch.on { background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .toggle-switch.on::after { left: 24px; }
+        .admin-panel .close-admin { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 12px; transition: all 0.3s ease; font-family: inherit; }
+        .admin-panel .close-admin:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+        @media (max-width: 768px) {
+            .hero h2 { font-size: 28px; }
+            .hero p { font-size: 13px; }
+            .hero-meta { gap: 10px; }
+            .meta-item { padding: 10px 14px; min-width: 80px; }
+            .meta-item .number { font-size: 22px; }
+            .two-col { grid-template-columns: 1fr; }
+            .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+            .chart-container { height: 240px; }
+            .map-container { height: 280px; }
+            .glass-card { padding: 20px; border-radius: 16px; }
+            .card-title { font-size: 16px; }
+            .server-brand h1 { font-size: 14px; }
+            .server-brand span { display: none; }
+            .top-btn { padding: 6px 10px; font-size: 12px; }
+            .status-text { display: none; }
+            .status-indicator { padding: 5px 10px; }
+            .timeline { flex-direction: column; }
+            .timeline-item { min-width: unset; }
+        }
+        @media (max-width: 480px) {
+            .gallery-grid { grid-template-columns: 1fr; }
+            .hero h2 { font-size: 24px; }
+            .main-content { padding-left: 14px; padding-right: 14px; }
+            .status-bar { padding: 8px 12px; }
+            .logo-container { width: 32px; height: 32px; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="bg-scene">
+        <div class="bg-gradient"></div>
+        <div class="bg-aurora"></div>
+        <div class="stars" id="stars"></div>
+        <div class="snow-particles" id="snowParticles"></div>
+        <canvas id="mountainCanvas"></canvas>
+    </div>
+    <div class="status-bar">
+        <div class="status-bar-left">
+            <div class="hamburger" id="hamburger" onclick="toggleSidebar(event)">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="server-brand">
+                <div class="logo-container" id="logoContainer" onclick="changeLogo(event)">
+                    <div class="logo-default" id="logoDefault">H</div>
+                    <img id="logoImg" style="display:none;" alt="Logo">
+                </div>
+                <div><h1>喜马拉雅服务器</h1><span>Java × 基岩 互通版</span></div>
+            </div>
+        </div>
+        <div class="status-bar-right">
+            <button class="top-btn" onclick="refreshData()">🔄 刷新</button>
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-dot online" id="statusDot"></div>
+                <span class="status-text online" id="statusText">服务器开启中</span>
+            </div>
+        </div>
+    </div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(event)"></div>
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-title"><span>📋</span> 导航菜单</div>
+        <ul class="sidebar-menu">
+            <li><a href="index.html"><div class="menu-icon">🏠</div><span>首页</span></a></li>
+            <li><a href="submit.html"><div class="menu-icon">📮</div><span>投稿箱</span></a></li>
+        </ul>
+        <div class="sidebar-footer">喜马拉雅服务器 © 2026</div>
+    </nav>
+    <div class="main-content">
+        <div class="hero">
+            <h2>喜马拉雅服务器</h2>
+            <p>一个跨越 Java 与基岩版的 Minecraft 互通世界，在这里，每一位冒险者都能找到属于自己的故事。</p>
+            <div class="hero-meta">
+                <div class="meta-item"><span class="number" id="totalPlayers">29</span><span class="label">参与玩家</span></div>
+                <div class="meta-item"><span class="number">5</span><span class="label">玩家基地</span></div>
+                <div class="meta-item"><span class="number">2</span><span class="label">版本互通</span></div>
+            </div>
+        </div>
+        <div class="glass-card">
+            <div class="card-title"><div class="icon">📜</div>服务器历史</div>
+            <div class="history-content">
+                <p>喜马拉雅服务器创立于 <strong class="highlight">2026年7月4日</strong>，早在 <strong>2026年2月16日</strong> 便已初建模型，历经约 <strong>5个月</strong> 的沉淀与打磨。在众多服务器中脱颖而出，成为玩家们心中的理想世界。</p>
+                <p style="margin-top:10px;">目前服务器拥有 <strong class="highlight">5个玩家基地</strong>，参与人数高达 <strong class="highlight">29人</strong>。在线人数分布：上午普遍 <strong>0~1人</strong>，下午 <strong>3~6人</strong>，晚上 <strong>4~5人</strong>。</p>
+                <div class="timeline">
+                    <div class="timeline-item"><div class="date">2026.02.16</div><div class="event">初建模型</div></div>
+                    <div class="timeline-item"><div class="date">2026.07.04</div><div class="event">正式创立</div></div>
+                    <div class="timeline-item"><div class="date">至今</div><div class="event">持续运营中</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="two-col">
+            <div class="glass-card">
+                <div class="card-title"><div class="icon">📈</div>实时在线人数</div>
+                <div class="chart-container"><canvas class="chart-canvas" id="lineChart"></canvas></div>
+                <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div><span>在线人数 (点击图表查看)</span></div></div>
+            </div>
+            <div class="glass-card">
+                <div class="card-title"><div class="icon">🥧</div>玩家性别分布</div>
+                <div class="chart-container"><canvas class="chart-canvas" id="pieChart"></canvas></div>
+                <div class="chart-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:#00d4aa;"></div><span>男生 60%</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ff6b9d;"></div><span>女生 30%</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#a0a0a0;"></div><span>隐藏 10%</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="glass-card">
+            <div class="card-title"><div class="icon">🖼️</div>玩家画廊</div>
+            <p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px;">将 PNG 图片放入 <code>images/gallery/</code> 文件夹即可自动展示。点击图片可全屏查看。</p>
+            <div class="gallery-grid" id="gallery">
+                <div class="gallery-item" data-name="基地全景 1"><div class="gallery-placeholder"><div class="ph-icon">🏰</div><div class="ph-text">基地全景 1</div></div><div class="overlay"><span>基地全景 1</span></div></div>
+                <div class="gallery-item" data-name="冒险时刻"><div class="gallery-placeholder"><div class="ph-icon">⚔️</div><div class="ph-text">冒险时刻</div></div><div class="overlay"><span>冒险时刻</span></div></div>
+                <div class="gallery-item" data-name="温馨小屋"><div class="gallery-placeholder"><div class="ph-icon">🏠</div><div class="ph-text">温馨小屋</div></div><div class="overlay"><span>温馨小屋</span></div></div>
+                <div class="gallery-item" data-name="日出美景"><div class="gallery-placeholder"><div class="ph-icon">🌅</div><div class="ph-text">日出美景</div></div><div class="overlay"><span>日出美景</span></div></div>
+                <div class="gallery-item" data-name="庆典活动"><div class="gallery-placeholder"><div class="ph-icon">🎆</div><div class="ph-text">庆典活动</div></div><div class="overlay"><span>庆典活动</span></div></div>
+                <div class="gallery-item" data-name="战斗场景"><div class="gallery-placeholder"><div class="ph-icon">🗡️</div><div class="ph-text">战斗场景</div></div><div class="overlay"><span>战斗场景</span></div></div>
+            </div>
+        </div>
+        <div class="glass-card map-section">
+            <div class="card-title"><div class="icon">🗺️</div>服务器世界地图</div>
+            <p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px;">将地图渲染图放入 <code>images/map/world-map.png</code> 即可展示。点击地图可放大查看。</p>
+            <div class="map-overlay-bg" id="mapOverlayBg" onclick="toggleMapZoom()"></div>
+            <div class="map-container" id="mapContainer" onclick="toggleMapZoom()">
+                <div class="map-placeholder"><div class="mp-icon">🗺️</div><div class="mp-text">世界地图占位</div><div class="mp-hint">请将地图图片放入 images/map/world-map.png</div></div>
+            </div>
+        </div>
+    </div>
+    <footer><p>© 2026 喜马拉雅服务器 | Himalaya Server</p><p style="margin-top:6px;">Made with ❤️ for Minecraft Players</p></footer>
+    <div class="image-viewer" id="imageViewer" onclick="closeImageViewer()"><div class="image-viewer-bg"></div><div class="image-viewer-close">✕</div><img class="image-viewer-img" id="viewerImg" src="" alt=""></div>
+    <div class="popup-overlay" id="popupOverlay" onclick="closePopup()"></div>
+    <div class="player-popup" id="playerPopup"><h3>当前在线人数</h3><div class="current-count" id="popupCount">3</div><p style="color:var(--text-secondary);font-size:13px;">最后更新: <span id="popupTime">--:--</span></p><button class="popup-close" onclick="closePopup()">关闭</button></div>
+    <div class="password-overlay" id="passwordOverlay"><div class="password-box"><h3>🔐 管理员验证</h3><input type="password" id="adminPassword" placeholder="请输入管理员密码" onkeydown="if(event.key==='Enter')checkPassword()"><div class="pw-btns"><button class="confirm" onclick="checkPassword()">确认</button><button class="cancel" onclick="closePasswordBox()">取消</button></div><p class="pw-hint">默认密码: himalaya2026</p></div></div>
+    <div class="admin-panel" id="adminPanel"><h3>🔧 管理员控制台<span class="admin-badge">ADMIN</span></h3><div class="control-row"><label>服务器状态</label><div class="toggle-switch on" id="serverToggle" onclick="toggleServer()"></div></div><div class="control-row" style="margin-bottom:0;"><label style="font-size:12px;color:rgba(255,255,255,0.4);">当前状态: <span id="adminStatusText" style="color:var(--accent);">开启</span></label></div><button class="close-admin" onclick="closeAdminPanel()" style="margin-top:14px;">关闭面板</button></div>
+<script>
+function stopProp(e){ if(e) e.stopPropagation(); }
+
+function createStars(){
+    const c=document.getElementById('stars');
+    if(!c) return;
+    c.innerHTML='';
+    for(let i=0;i<70;i++){
+        const s=document.createElement('div');
+        s.className='star';
+        s.style.left=Math.random()*100+'%';
+        s.style.top=Math.random()*100+'%';
+        const sz=1+Math.random()*2.5;
+        s.style.width=sz+'px'; s.style.height=sz+'px';
+        s.style.animationDelay=Math.random()*3+'s';
+        s.style.animationDuration=(2+Math.random()*3)+'s';
+        c.appendChild(s);
+    }
+}
+createStars();
+
+function createSnow(){
+    const c=document.getElementById('snowParticles');
+    if(!c) return;
+    c.innerHTML='';
+    for(let i=0;i<35;i++){
+        const s=document.createElement('div');
+        s.className='snow';
+        s.style.left=Math.random()*100+'%';
+        const sz=1+Math.random()*2;
+        s.style.width=sz+'px'; s.style.height=sz+'px';
+        s.style.animationDelay=Math.random()*10+'s';
+        s.style.animationDuration=(8+Math.random()*12)+'s';
+        c.appendChild(s);
+    }
+}
+createSnow();
+
+function drawMountains(){
+    const canvas=document.getElementById('mountainCanvas');
+    if(!canvas) return;
+    const ctx=canvas.getContext('2d');
+    function resize(){
+        const dpr=window.devicePixelRatio||1;
+        canvas.width=window.innerWidth*dpr;
+        canvas.height=window.innerHeight*0.55*dpr;
+        canvas.style.width=window.innerWidth+'px';
+        canvas.style.height=(window.innerHeight*0.55)+'px';
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+        render();
+    }
+    function render(){
+        const w=window.innerWidth;
+        const h=window.innerHeight*0.55;
+        ctx.clearRect(0,0,w,h);
+        drawRange(w,h,0.78,'#0c1a2e',4,0.25,false);
+        drawRange(w,h,0.65,'#0e2038',6,0.4,false);
+        drawRange(w,h,0.52,'#112844',8,0.6,false);
+        drawRange(w,h,0.38,'#163050',10,0.85,true);
+    }
+    function drawRange(w,h,baseY,color,peaks,amplitude,hasSnow){
+        ctx.beginPath(); ctx.moveTo(0,h);
+        const segments=peaks*25;
+        const step=w/segments;
+        for(let i=0;i<=segments;i++){
+            const x=i*step;
+            const peakIndex=Math.floor(i/25);
+            const phase=(i%25)/25;
+            let peakHeight=amplitude*h*0.22;
+            if(hasSnow&&peakIndex===Math.floor(peaks/2)) peakHeight*=1.5;
+            const shape=Math.sin(phase*Math.PI);
+            const y=h*baseY-shape*peakHeight*(0.4+0.6*Math.sin(peakIndex*1.3+0.5));
+            if(i===0) ctx.lineTo(0,y); else ctx.lineTo(x,y);
+        }
+        ctx.lineTo(w,h); ctx.closePath();
+        const grad=ctx.createLinearGradient(0,h*baseY-h*0.25,0,h);
+        grad.addColorStop(0,hasSnow?'#1a3a5f':color);
+        grad.addColorStop(0.25,color);
+        grad.addColorStop(1,'#070d18');
+        ctx.fillStyle=grad; ctx.fill();
+        if(hasSnow){
+            ctx.save(); ctx.clip();
+            for(let i=0;i<=segments;i++){
+                const x=i*step;
+                const phase=(i%25)/25;
+                const shape=Math.sin(phase*Math.PI);
+                if(shape>0.65){
+                    const y=h*baseY-shape*amplitude*h*0.22*0.9;
+                    const size=(shape-0.65)*35;
+                    ctx.beginPath(); ctx.arc(x,y,size,0,Math.PI*2);
+                    ctx.fillStyle='rgba(180,210,255,0.12)'; ctx.fill();
+                }
+            }
+            ctx.restore();
+        }
+    }
+    resize();
+    window.addEventListener('resize',resize);
+}
+if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',drawMountains);
+} else {
+    drawMountains();
+}
+
+function changeLogo(e){
+    stopProp(e);
+    const input=document.createElement('input');
+    input.type='file'; input.accept='image/*';
+    input.onchange=function(ev){
+        const file=ev.target.files[0];
+        if(file){
+            const reader=new FileReader();
+            reader.onload=function(event){
+                const img=document.getElementById('logoImg');
+                const def=document.getElementById('logoDefault');
+                if(img&&def){
+                    img.src=event.target.result;
+                    img.style.display='block';
+                    def.style.display='none';
+                    localStorage.setItem('himalayaLogo',event.target.result);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    input.click();
+}
+const savedLogo=localStorage.getItem('himalayaLogo');
+if(savedLogo){
+    const img=document.getElementById('logoImg');
+    const def=document.getElementById('logoDefault');
+    if(img&&def){ img.src=savedLogo; img.style.display='block'; def.style.display='none'; }
+}
+
+function toggleSidebar(e){
+    stopProp(e);
+    const hamburger=document.getElementById('hamburger');
+    const sidebar=document.getElementById('sidebar');
+    const overlay=document.getElementById('sidebarOverlay');
+    if(!sidebar) return;
+    const isOpen=sidebar.classList.contains('active');
+    if(isOpen){
+        if(hamburger) hamburger.classList.remove('active');
+        sidebar.classList.remove('active');
+        if(overlay) overlay.classList.remove('active');
+        document.body.style.overflow='';
+    } else {
+        if(hamburger) hamburger.classList.add('active');
+        sidebar.classList.add('active');
+        if(overlay) overlay.classList.add('active');
+    }
+}
+
+const galleryItems=document.querySelectorAll('.gallery-item');
+let isPressing=false;
+galleryItems.forEach(item=>{
+    function onPressStart(e){
+        isPressing=true;
+        const rect=item.getBoundingClientRect();
+        let clientX,clientY;
+        if(e.touches){ clientX=e.touches[0].clientX; clientY=e.touches[0].clientY; }
+        else { clientX=e.clientX; clientY=e.clientY; }
+        const x=clientX-rect.left;
+        const y=clientY-rect.top;
+        const w=rect.width, h=rect.height;
+        const isLeft=x<w*0.4, isRight=x>w*0.6;
+        const isTop=y<h*0.4, isBottom=y>h*0.6;
+        item.classList.remove('tilt-tl','tilt-tr','tilt-bl','tilt-br','tilt-center');
+        if(isLeft&&isTop) item.classList.add('tilt-tl');
+        else if(isRight&&isTop) item.classList.add('tilt-tr');
+        else if(isLeft&&isBottom) item.classList.add('tilt-bl');
+        else if(isRight&&isBottom) item.classList.add('tilt-br');
+        else item.classList.add('tilt-center');
+    }
+    function onPressEnd(e){
+        if(!isPressing) return;
+        isPressing=false;
+        item.classList.remove('tilt-tl','tilt-tr','tilt-bl','tilt-br','tilt-center');
+        const img=item.querySelector('img');
+        if(img&&img.src&&img.src.length>10&&!img.src.includes('undefined')){
+            openImageViewer(img.src);
+        } else {
+            const name=item.dataset.name||'图片';
+            alert('请将 "'+name+'" 的 PNG 图片放入 images/gallery/ 文件夹');
+        }
+    }
+    function onPressCancel(){ isPressing=false; item.classList.remove('tilt-tl','tilt-tr','tilt-bl','tilt-br','tilt-center'); }
+    item.addEventListener('mousedown',onPressStart);
+    item.addEventListener('mouseup',onPressEnd);
+    item.addEventListener('mouseleave',onPressCancel);
+    item.addEventListener('touchstart',onPressStart,{passive:true});
+    item.addEventListener('touchend',onPressEnd,{passive:true});
+    item.addEventListener('touchcancel',onPressCancel,{passive:true});
+});
+
+function openImageViewer(src){
+    const viewer=document.getElementById('imageViewer');
+    const img=document.getElementById('viewerImg');
+    if(!viewer||!img) return;
+    img.src=src;
+    viewer.classList.add('active');
+}
+function closeImageViewer(){
+    const viewer=document.getElementById('imageViewer');
+    if(viewer) viewer.classList.remove('active');
+}
+
+let isMapZoomed=false;
+function toggleMapZoom(){
+    const container=document.getElementById('mapContainer');
+    const overlay=document.getElementById('mapOverlayBg');
+    if(!container) return;
+    const img=container.querySelector('img');
+    if(!img||img.style.display==='none'||!img.src||img.src.length<10){
+        alert('请先上传地图图片到 images/map/world-map.png');
+        return;
+    }
+    isMapZoomed=!isMapZoomed;
+    if(isMapZoomed){ container.classList.add('zoomed'); if(overlay) overlay.classList.add('active'); }
+    else { container.classList.remove('zoomed'); if(overlay) overlay.classList.remove('active'); }
+}
+
+const ADMIN_PASSWORD='himalaya2026';
+let isAdmin=false;
+document.addEventListener('keydown',function(e){
+    if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='a'){
+        e.preventDefault();
+        const overlay=document.getElementById('passwordOverlay');
+        const input=document.getElementById('adminPassword');
+        if(overlay) overlay.classList.add('active');
+        if(input) input.focus();
+    }
+    if(e.key==='Escape'){
+        closePasswordBox(); closeAdminPanel(); closePopup();
+        if(isMapZoomed) toggleMapZoom();
+        closeImageViewer();
+        const sidebar=document.getElementById('sidebar');
+        const hamburger=document.getElementById('hamburger');
+        const sbOverlay=document.getElementById('sidebarOverlay');
+        if(sidebar&&sidebar.classList.contains('active')){
+            sidebar.classList.remove('active');
+            if(hamburger) hamburger.classList.remove('active');
+            if(sbOverlay) sbOverlay.classList.remove('active');
+            document.body.style.overflow='';
+        }
+    }
+});
+function checkPassword(){
+    const input=document.getElementById('adminPassword');
+    if(!input) return;
+    if(input.value===ADMIN_PASSWORD){
+        isAdmin=true;
+        closePasswordBox();
+        const panel=document.getElementById('adminPanel');
+        if(panel) panel.classList.add('active');
+        input.value='';
+    } else {
+        alert('密码错误，请重试');
+        input.value='';
+        input.focus();
+    }
+}
+function closePasswordBox(){
+    const overlay=document.getElementById('passwordOverlay');
+    const input=document.getElementById('adminPassword');
+    if(overlay) overlay.classList.remove('active');
+    if(input) input.value='';
+}
+function closeAdminPanel(){
+    const panel=document.getElementById('adminPanel');
+    if(panel) panel.classList.remove('active');
+}
+
+let isServerOnline=true;
+const savedStatus=localStorage.getItem('himalayaServerStatus');
+if(savedStatus!==null){ isServerOnline=savedStatus==='true'; updateStatusUI(); }
+function toggleServer(){
+    if(!isAdmin){ alert('您没有权限执行此操作'); return; }
+    isServerOnline=!isServerOnline;
+    localStorage.setItem('himalayaServerStatus',isServerOnline);
+    updateStatusUI(); updateAdminPanel(); drawLineChart();
+}
+function updateStatusUI(){
+    const dot=document.getElementById('statusDot');
+    const text=document.getElementById('statusText');
+    if(!dot||!text) return;
+    if(isServerOnline){
+        dot.classList.remove('offline'); dot.classList.add('online');
+        text.classList.remove('offline'); text.classList.add('online');
+        text.textContent='服务器开启中';
+    } else {
+        dot.classList.remove('online'); dot.classList.add('offline');
+        text.classList.remove('online'); text.classList.add('offline');
+        text.textContent='服务器已关闭';
+    }
+}
+function updateAdminPanel(){
+    const toggle=document.getElementById('serverToggle');
+    const statusText=document.getElementById('adminStatusText');
+    if(!toggle||!statusText) return;
+    if(isServerOnline){
+        toggle.classList.add('on');
+        statusText.textContent='开启';
+        statusText.style.color='var(--accent)';
+    } else {
+        toggle.classList.remove('on');
+        statusText.textContent='关闭';
+        statusText.style.color='var(--danger)';
+    }
+}
+
+const baseData=[];
+for(let h=0;h<24;h++){
+    let base;
+    if(h>=6&&h<12) base=0.5;
+    else if(h>=12&&h<18) base=4.5;
+    else if(h>=18&&h<24) base=4.5;
+    else base=0.5;
+    baseData.push(base);
+}
+let playerData=[];
+function getBeijingTime(){
+    const now=new Date();
+    const utc=now.getTime()+(now.getTimezoneOffset()*60000);
+    return new Date(utc+(3600000*8));
+}
+function updatePlayerData(){
+    const beijing=getBeijingTime();
+    const currentHour=beijing.getHours();
+    playerData=[];
+    for(let h=0;h<24;h++){
+        if(h<currentHour){
+            const seed=h*137;
+            const pseudoRandom=((seed*9301+49297)%233280)/233280;
+            const noise=(pseudoRandom-0.5)*0.3;
+            playerData.push(Math.max(0,Math.min(6,baseData[h]+noise)));
+        } else if(h===currentHour){
+            const noise=(Math.random()-0.5)*0.3;
+            playerData.push(Math.max(0,Math.min(6,baseData[h]+noise)));
+        } else {
+            playerData.push(null);
+        }
+    }
+}
+updatePlayerData();
+
+const lineCanvas=document.getElementById('lineChart');
+const lineCtx=lineCanvas?lineCanvas.getContext('2d'):null;
+function resizeLineCanvas(){
+    if(!lineCanvas) return;
+    const rect=lineCanvas.parentElement.getBoundingClientRect();
+    lineCanvas.width=rect.width*window.devicePixelRatio;
+    lineCanvas.height=rect.height*window.devicePixelRatio;
+    lineCtx.scale(window.devicePixelRatio,window.devicePixelRatio);
+}
+if(lineCanvas) resizeLineCanvas();
+
+function drawLineChart(){
+    if(!lineCanvas||!lineCtx) return;
+    const w=lineCanvas.width/window.devicePixelRatio;
+    const h=lineCanvas.height/window.devicePixelRatio;
+    const padding={top:30,right:30,bottom:40,left:40};
+    const chartW=w-padding.left-padding.right;
+    const chartH=h-padding.top-padding.bottom;
+    const maxVal=20;
+    const beijing=getBeijingTime();
+    const currentHour=beijing.getHours();
+    lineCtx.clearRect(0,0,w,h);
+    lineCtx.strokeStyle='rgba(255,255,255,0.05)';
+    lineCtx.lineWidth=1;
+    for(let i=0;i<=maxVal;i+=5){
+        const y=padding.top+chartH-(i/maxVal)*chartH;
+        lineCtx.beginPath(); lineCtx.moveTo(padding.left,y); lineCtx.lineTo(w-padding.right,y); lineCtx.stroke();
+        lineCtx.fillStyle='rgba(255,255,255,0.3)'; lineCtx.font='11px sans-serif'; lineCtx.textAlign='right';
+        lineCtx.fillText(i,padding.left-8,y+3);
+    }
+    lineCtx.fillStyle='rgba(255,255,255,0.3)'; lineCtx.textAlign='center';
+    for(let i=0;i<24;i+=3){
+        const x=padding.left+(i/23)*chartW;
+        lineCtx.fillText(i+':00',x,h-padding.bottom+18);
+    }
+    if(!isServerOnline){
+        lineCtx.fillStyle='rgba(255,255,255,0.2)'; lineCtx.font='16px sans-serif'; lineCtx.textAlign='center';
+        lineCtx.fillText('服务器离线 - 暂无数据',w/2,h/2); return;
+    }
+    const validPoints=[];
+    for(let i=0;i<24;i++){
+        if(playerData[i]!==null){
+            validPoints.push({
+                x:padding.left+(i/23)*chartW,
+                y:padding.top+chartH-(playerData[i]/maxVal)*chartH,
+                value:playerData[i], hour:i
+            });
+        }
+    }
+    if(validPoints.length===0) return;
+    lineCtx.beginPath(); lineCtx.moveTo(validPoints[0].x,padding.top+chartH);
+    for(let i=0;i<validPoints.length-1;i++){
+        const cp1x=validPoints[i].x+(validPoints[i+1].x-validPoints[i].x)*0.5;
+        const cp1y=validPoints[i].y;
+        const cp2x=validPoints[i+1].x-(validPoints[i+1].x-validPoints[i].x)*0.5;
+        const cp2y=validPoints[i+1].y;
+        lineCtx.bezierCurveTo(cp1x,cp1y,cp2x,cp2y,validPoints[i+1].x,validPoints[i+1].y);
+    }
+    lineCtx.lineTo(validPoints[validPoints.length-1].x,padding.top+chartH); lineCtx.closePath();
+    const gradient=lineCtx.createLinearGradient(0,padding.top,0,padding.top+chartH);
+    gradient.addColorStop(0,'rgba(0,212,170,0.3)'); gradient.addColorStop(1,'rgba(0,212,170,0)');
+    lineCtx.fillStyle=gradient; lineCtx.fill();
+    lineCtx.beginPath(); lineCtx.moveTo(validPoints[0].x,validPoints[0].y);
+    for(let i=0;i<validPoints.length-1;i++){
+        const cp1x=validPoints[i].x+(validPoints[i+1].x-validPoints[i].x)*0.5;
+        const cp1y=validPoints[i].y;
+        const cp2x=validPoints[i+1].x-(validPoints[i+1].x-validPoints[i].x)*0.5;
+        const cp2y=validPoints[i+1].y;
+        lineCtx.bezierCurveTo(cp1x,cp1y,cp2x,cp2y,validPoints[i+1].x,validPoints[i+1].y);
+    }
+    lineCtx.strokeStyle='#00d4aa'; lineCtx.lineWidth=2.5;
+    lineCtx.shadowColor='rgba(0,212,170,0.5)'; lineCtx.shadowBlur=10; lineCtx.stroke(); lineCtx.shadowBlur=0;
+    for(let i=0;i<validPoints.length;i+=2){
+        lineCtx.beginPath(); lineCtx.arc(validPoints[i].x,validPoints[i].y,4,0,Math.PI*2);
+        lineCtx.fillStyle='#00d4aa'; lineCtx.fill();
+        lineCtx.strokeStyle='rgba(0,0,0,0.5)'; lineCtx.lineWidth=2; lineCtx.stroke();
+    }
+    const currentX=padding.left+(currentHour/23)*chartW;
+    lineCtx.beginPath(); lineCtx.moveTo(currentX,padding.top); lineCtx.lineTo(currentX,padding.top+chartH);
+    lineCtx.strokeStyle='rgba(255,255,255,0.3)'; lineCtx.lineWidth=1; lineCtx.setLineDash([4,4]); lineCtx.stroke(); lineCtx.setLineDash([]);
+    const currentVal=playerData[currentHour];
+    if(currentVal!==null){
+        lineCtx.fillStyle='#00d4aa'; lineCtx.font='bold 12px sans-serif'; lineCtx.textAlign='center';
+        lineCtx.fillText(currentVal.toFixed(1),currentX,padding.top-8);
+    }
+    if(currentHour<23){
+        const futureStartX=currentX;
+        lineCtx.fillStyle='rgba(0,0,0,0.3)';
+        lineCtx.fillRect(futureStartX,padding.top,(w-padding.right)-futureStartX,chartH);
+        lineCtx.fillStyle='rgba(255,255,255,0.15)'; lineCtx.font='13px sans-serif'; lineCtx.textAlign='center';
+        lineCtx.fillText('未来数据',futureStartX+((w-padding.right)-futureStartX)/2,padding.top+chartH/2);
+    }
+}
+if(lineCanvas){
+    lineCanvas.addEventListener('click',function(e){
+        const rect=lineCanvas.getBoundingClientRect();
+        const x=(e.clientX-rect.left)*window.devicePixelRatio;
+        const w=lineCanvas.width;
+        const padding={left:40,right:30};
+        const chartW=w-padding.left-padding.right;
+        const hourIndex=Math.round(((x-padding.left)/chartW)*23);
+        const clampedIndex=Math.max(0,Math.min(23,hourIndex));
+        if(playerData[clampedIndex]===null){
+            document.getElementById('popupCount').textContent='--';
+            document.getElementById('popupTime').textContent=clampedIndex+':00 (未来)';
+        } else {
+            document.getElementById('popupCount').textContent=playerData[clampedIndex].toFixed(1);
+            document.getElementById('popupTime').textContent=clampedIndex+':00';
+        }
+        document.getElementById('popupOverlay').classList.add('active');
+        document.getElementById('playerPopup').classList.add('active');
+    });
+}
+function closePopup(){
+    const overlay=document.getElementById('popupOverlay');
+    const popup=document.getElementById('playerPopup');
+    if(overlay) overlay.classList.remove('active');
+    if(popup) popup.classList.remove('active');
+}
+
+const pieCanvas=document.getElementById('pieChart');
+const pieCtx=pieCanvas?pieCanvas.getContext('2d'):null;
+let pieAnim=0;
+function resizePieCanvas(){
+    if(!pieCanvas) return;
+    const rect=pieCanvas.parentElement.getBoundingClientRect();
+    pieCanvas.width=rect.width*window.devicePixelRatio;
+    pieCanvas.height=rect.height*window.devicePixelRatio;
+    pieCtx.scale(window.devicePixelRatio,window.devicePixelRatio);
+}
+if(pieCanvas) resizePieCanvas();
+function drawPieChart(){
+    if(!pieCanvas||!pieCtx) return;
+    const w=pieCanvas.width/window.devicePixelRatio;
+    const h=pieCanvas.height/window.devicePixelRatio;
+    const cx=w/2, cy=h/2+10;
+    const radius=Math.min(w,h)/2-40;
+    const innerRadius=radius*0.55;
+    pieCtx.clearRect(0,0,w,h);
+    const data=[{label:'男生',value:60,color:'#00d4aa'},{label:'女生',value:30,color:'#ff6b9d'},{label:'隐藏',value:10,color:'#a0a0a0'}];
+    let startAngle=-Math.PI/2;
+    const total=data.reduce((a,b)=>a+b.value,0);
+    data.forEach(item=>{
+        const sliceAngle=(item.value/total)*Math.PI*2*pieAnim;
+        const endAngle=startAngle+sliceAngle;
+        pieCtx.beginPath(); pieCtx.arc(cx,cy,radius,startAngle,endAngle); pieCtx.arc(cx,cy,innerRadius,endAngle,startAngle,true); pieCtx.closePath();
+        pieCtx.fillStyle=item.color; pieCtx.fill();
+        pieCtx.strokeStyle='rgba(255,255,255,0.1)'; pieCtx.lineWidth=2; pieCtx.stroke();
+        if(pieAnim>0.8){
+            const midAngle=startAngle+sliceAngle/2;
+            const labelR=radius*0.78;
+            const lx=cx+Math.cos(midAngle)*labelR;
+            const ly=cy+Math.sin(midAngle)*labelR;
+            pieCtx.fillStyle='#fff'; pieCtx.font='bold 14px sans-serif'; pieCtx.textAlign='center'; pieCtx.textBaseline='middle';
+            pieCtx.fillText(item.value+'%',lx,ly);
+        }
+        startAngle=endAngle;
+    });
+    if(pieAnim>0.9){
+        pieCtx.fillStyle='rgba(255,255,255,0.5)'; pieCtx.font='12px sans-serif'; pieCtx.textAlign='center';
+        pieCtx.fillText('总玩家',cx,cy-8);
+        pieCtx.fillStyle='#fff'; pieCtx.font='bold 20px sans-serif';
+        pieCtx.fillText('29',cx,cy+14);
+    }
+}
+function animatePie(){
+    if(pieAnim<1){ pieAnim+=0.02; drawPieChart(); requestAnimationFrame(animatePie); }
+}
+if(pieCanvas) animatePie();
+
+function tickUpdate(){
+    if(!isServerOnline){ drawLineChart(); return; }
+    updatePlayerData(); drawLineChart();
+}
+function refreshData(){ updatePlayerData(); drawLineChart(); }
+
+window.addEventListener('resize',()=>{
+    if(lineCanvas){ resizeLineCanvas(); drawLineChart(); }
+    if(pieCanvas){ resizePieCanvas(); drawPieChart(); }
+});
+
+updateStatusUI();
+if(lineCanvas) drawLineChart();
+setInterval(tickUpdate,10000);
+setInterval(()=>{ if(lineCanvas) drawLineChart(); },1000);
+
+function loadImages(){
+    const galleryNames=['base1','base2','base3','adventure','sunset','event'];
+    const galleryContainer=document.getElementById('gallery');
+    if(!galleryContainer) return;
+    const items=galleryContainer.querySelectorAll('.gallery-item');
+    galleryNames.forEach((name,i)=>{
+        if(i>=items.length) return;
+        const img=new Image();
+        img.onload=function(){
+            items[i].innerHTML='<img src="images/gallery/'+name+'.png" alt="'+name+'" style="width:100%;height:100%;object-fit:cover;display:block;"><div class="overlay"><span>'+name+'</span></div>';
+        };
+        img.onerror=function(){};
+        img.src='images/gallery/'+name+'.png';
+    });
+    const mapImg=new Image();
+    mapImg.onload=function(){
+        const container=document.getElementById('mapContainer');
+        if(container) container.innerHTML='<img src="images/map/world-map.png" alt="World Map" style="width:100%;height:100%;object-fit:contain;display:block;">';
+    };
+    mapImg.src='images/map/world-map.png';
+}
+window.addEventListener('load',loadImages);
+</script>
+</body>
+</html>
