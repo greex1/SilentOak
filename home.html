@@ -298,6 +298,156 @@
             .status-bar { padding: 8px 12px; }
             .logo-container { width: 32px; height: 32px; }
         }
+        /* ========== 底部 3D 圆环状态面板 ========== */
+.stats-container {
+    position: fixed;
+    bottom: 40px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 180px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* 圆环外框 */
+.ring-wrapper {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    perspective: 600px;
+}
+
+/* 左侧圆环：向右上方斜视 */
+.ring-left .ring-track {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 60, 60, 0.35);
+    border-top-color: #ff3c3c;
+    border-right-color: #ff3c3c;
+    box-shadow: 
+        0 0 20px rgba(255, 60, 60, 0.15),
+        inset 0 0 20px rgba(255, 60, 60, 0.05);
+    transform: rotateX(55deg) rotateY(-35deg) rotateZ(0deg);
+    position: relative;
+}
+
+/* 右侧圆环：向左上方斜视 */
+.ring-right .ring-track {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid rgba(60, 150, 255, 0.35);
+    border-top-color: #3c96ff;
+    border-left-color: #3c96ff;
+    box-shadow: 
+        0 0 20px rgba(60, 150, 255, 0.15),
+        inset 0 0 20px rgba(60, 150, 255, 0.05);
+    transform: rotateX(55deg) rotateY(35deg) rotateZ(0deg);
+    position: relative;
+}
+
+/* 粒子 */
+.particle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: -3px;
+    margin-left: -3px;
+}
+
+/* 红色粒子 */
+.particle-red {
+    background: #ff4444;
+    box-shadow: 0 0 8px #ff4444, 0 0 16px #ff0000;
+    animation: orbit-red 3s linear infinite;
+}
+
+/* 蓝色粒子 */
+.particle-blue {
+    background: #4499ff;
+    box-shadow: 0 0 8px #4499ff, 0 0 16px #0066ff;
+    animation: orbit-blue 3s linear infinite;
+}
+
+/* 多个粒子错开时间 */
+.particle:nth-child(1) { animation-delay: 0s; }
+.particle:nth-child(2) { animation-delay: 1s; }
+.particle:nth-child(3) { animation-delay: 2s; }
+
+/* 红色绕环动画 */
+@keyframes orbit-red {
+    0%   { transform: rotate(0deg)   translateX(78px) rotate(0deg); }
+    100% { transform: rotate(360deg) translateX(78px) rotate(-360deg); }
+}
+
+/* 蓝色绕环动画 */
+@keyframes orbit-blue {
+    0%   { transform: rotate(0deg)   translateX(78px) rotate(0deg); }
+    100% { transform: rotate(-360deg) translateX(78px) rotate(360deg); }
+}
+
+/* 文字标签 */
+.ring-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    pointer-events: auto;
+}
+
+.ring-left .ring-label {
+    color: #ff5555;
+}
+
+.ring-right .ring-label {
+    color: #55aaff;
+}
+
+/* 小字说明 */
+.ring-sublabel {
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: #aaa;
+    white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* 手机适配 */
+@media (max-width: 700px) {
+    .stats-container {
+        gap: 60px;
+        bottom: 20px;
+    }
+    .ring-wrapper {
+        width: 110px;
+        height: 110px;
+    }
+    .ring-label {
+        font-size: 1rem;
+    }
+    @keyframes orbit-red {
+        0%   { transform: rotate(0deg)   translateX(52px) rotate(0deg); }
+        100% { transform: rotate(360deg) translateX(52px) rotate(-360deg); }
+    }
+    @keyframes orbit-blue {
+        0%   { transform: rotate(0deg)   translateX(52px) rotate(0deg); }
+        100% { transform: rotate(-360deg) translateX(52px) rotate(360deg); }
+    }
+}
     </style>
 <base target="_blank">
 </head>
@@ -1003,6 +1153,32 @@ window.addEventListener('load',loadImages);
         img.src = jsdelivrUrl;
     });
 })();
+        <!-- 底部 3D 圆环状态面板 -->
+<div class="stats-container">
+    
+    <!-- 左侧：红色 CPU 圆环 -->
+    <div class="ring-wrapper ring-left">
+        <div class="ring-track">
+            <div class="particle particle-red"></div>
+            <div class="particle particle-red"></div>
+            <div class="particle particle-red"></div>
+        </div>
+        <div class="ring-label">CPU</div>
+        <div class="ring-sublabel">处理器</div>
+    </div>
+    
+    <!-- 右侧：蓝色 内存 圆环 -->
+    <div class="ring-wrapper ring-right">
+        <div class="ring-track">
+            <div class="particle particle-blue"></div>
+            <div class="particle particle-blue"></div>
+            <div class="particle particle-blue"></div>
+        </div>
+        <div class="ring-label">16G</div>
+        <div class="ring-sublabel">运行内存</div>
+    </div>
+    
+</div>
 </script>
 </body>
 </html>
